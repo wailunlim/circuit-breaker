@@ -8,10 +8,12 @@ const axios = require('axios')
 axios.defaults.headers.common['authorization'] = 'Bearer ' + twitterConfig.auth_token;
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
+console.log(process.argv)
+
 // wit
 const { Wit } = require('node-wit');
 const client = new Wit({
-  accessToken: 'TMIKAMREQK45WFIA5FEMEBRXN3BHR5JM'
+  accessToken: process.argv[3] 
 })
 
 const { Parser } = require('json2csv');
@@ -25,7 +27,6 @@ async function main() {
   })
   */
 
-  console.log(process.argv)
   const twitterData = getTwitterData(process.argv[2])
 
   const witResponses = await twitterData.then(async ({ results }) => {
