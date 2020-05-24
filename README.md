@@ -11,4 +11,4 @@ This repository contains code that:
 1. Gets twitter data
 2. Data cleaning
 3. Analyse sentiments with Wit.ai
-4. Data analysis
+4. Data analysis with R
