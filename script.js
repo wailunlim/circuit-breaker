@@ -16,7 +16,7 @@ const client = new Wit({
 
 const { Parser } = require('json2csv');
 
-function main() {
+async function main() {
   /*
   check rate limit
   const { data } = await axios.get(
@@ -25,9 +25,10 @@ function main() {
   })
   */
 
-  const twitterData = getTwitterData()
+  console.log(process.argv)
+  const twitterData = getTwitterData(process.argv[2])
 
-  const witResponses = twitterData.results.then(async function getWitSentiment(results){
+  const witResponses = await twitterData.then(async ({ results }) => {
     const res = await Promise.all(results.map(result => {
       return new Promise( (resolve, reject) => {
         client.message(result.text).then(({ entities }) => resolve({...result, sentiment: entities.sentiment ? entities.sentiment[0].value : 'mixed', confidence: entities.sentiment ? entities.sentiment[0].confidence : null })).catch(err => resolve({...result, sentiment: null, confidence: null }) )
@@ -37,20 +38,19 @@ function main() {
     return res
   })
 
-  console.log(witResponses)
   const csv = new Parser().parse(witResponses)
-  fs.writeFileSync(`melissa#{twitterData.next}.csv`, csv)
+  fs.writeFileSync(`melissa${(await twitterData).next}.csv`, csv)
 }
 
 
 
-async function getTwitterData(nextToken=undefined){
+async function getTwitterData(nextToken){
   //TODO: find out how to allow multiple hashtags with OR relations #wfh2020 #workfromhome #workingfromhome #remoteworking #remotework 
   para = {
     "query": "#wfh lang:en", // id is for reply
     "maxResults": "500",
-    "fromDate":"202005230000", // start of covid: 201912010000 
-    "toDate":"202005230010", // somewhen now: 202005222359
+    "fromDate":"202001010000", // start of covid 
+    "toDate":"202005232359", // somewhen now
   }
   if (nextToken) {
     para = {
@@ -59,14 +59,10 @@ async function getTwitterData(nextToken=undefined){
     }
   }
 
-  try {
-    const { data } = await axios.post(
-      'https://api.twitter.com/1.1/tweets/search/fullarchive/circuitBreaker.json', 
-      para
-    )
-  } catch(err){
-    console.log(err)
-  }
+  const { data } = await axios.post(
+    'https://api.twitter.com/1.1/tweets/search/fullarchive/circuitBreaker.json', 
+    para
+  )
 
   // var temp = []
 
@@ -119,8 +115,7 @@ async function getTwitterData(nextToken=undefined){
   //    results.push(results_chain)
   //  }
    
-  // console.log(results)
-  console.log(data.next)
+  console.log('next', data.next)
   return {
     results,
     next: data.next
