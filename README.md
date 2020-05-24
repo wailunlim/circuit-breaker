@@ -10,7 +10,7 @@ As people are forced to work from home, we aim to find out what do people feel a
 
 This repository contains code that:
 
-Gets twitter data
-Data cleaning
-Analyse sentiments with Wit.ai
-Data analysis
+1. Gets twitter data
+2. Data cleaning
+3. Analyse sentiments with Wit.ai
+4. Data analysis
