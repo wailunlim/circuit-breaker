@@ -24,10 +24,10 @@ function main() {
      {
   })
   */
-  getTwitterData()
-  /*
-  const witResponses = getTwitterData().then (async function getWitSentiment(results){
-    console.log(results)
+
+  const twitterData = getTwitterData()
+
+  const witResponses = twitterData.results.then(async function getWitSentiment(results){
     const res = await Promise.all(results.map(result => {
       return new Promise( (resolve, reject) => {
         client.message(result.text).then(({ entities }) => resolve({...result, sentiment: entities.sentiment ? entities.sentiment[0].value : 'mixed', confidence: entities.sentiment ? entities.sentiment[0].confidence : null })).catch(err => resolve({...result, sentiment: null, confidence: null }) )
@@ -35,31 +35,30 @@ function main() {
     })
     )
     return res
-    
   })
 
   console.log(witResponses)
-  //const csv = new Parser().parse(witResponses)
-  //fs.writeFileSync('melissa.csv', csv)
-  */
+  const csv = new Parser().parse(witResponses)
+  fs.writeFileSync(`melissa#{twitterData.next}.csv`, csv)
 }
 
 
 
-async function getTwitterData(nextToken=undefined, reply=false, source_id = undefined, name = undefined){
+async function getTwitterData(nextToken=undefined){
   //TODO: find out how to allow multiple hashtags with OR relations #wfh2020 #workfromhome #workingfromhome #remoteworking #remotework 
   para = {
-    "query":reply? "@" + id + " lang:en" : "#wfh lang:en",
+    "query": "#wfh lang:en", // id is for reply
     "maxResults": "500",
     "fromDate":"202005230000", // start of covid: 201912010000 
     "toDate":"202005230010", // somewhen now: 202005222359
   }
-  if(nextToken != undefined) {
-    para= {
+  if (nextToken) {
+    para = {
       ...para,
       "next": nextToken
     }
   }
+
   try {
     const { data } = await axios.post(
       'https://api.twitter.com/1.1/tweets/search/fullarchive/circuitBreaker.json', 
@@ -69,23 +68,24 @@ async function getTwitterData(nextToken=undefined, reply=false, source_id = unde
     console.log(err)
   }
 
-  var temp = []
+  // var temp = []
 
-  var results
+  // var results
   
   // to get the replies to the specific tweet from the user in query 
-  if (reply == true){
-    results = data.results.filter(res => res.in_reply_to_status_id == source_id)
-  }
-  results = data.results.map(({ id, text, created_at, truncated, extended_tweet, entities, user, retweet_count, favorite_count, reply_count }) => {
+  // if (reply == true) {
+  //   results = data.results.filter(res => res.in_reply_to_status_id == source_id)
+  // }
+
+  const results = data.results.map(({ id, text, created_at, truncated, extended_tweet, entities, user, retweet_count, favorite_count, reply_count }) => {
     
-    //save to get comments for the tweet later
-    if (reply_count>0){
-      temp.push({
-        id: id,
-        name: user.screen_name
-      })
-    }
+    // save to get comments for the tweet later
+    // if (reply_count > 0) {
+    //   temp.push({
+    //     id: id,
+    //     name: user.screen_name
+    //   })
+    // }
 
     return {
       tweet_id: id,
@@ -99,28 +99,32 @@ async function getTwitterData(nextToken=undefined, reply=false, source_id = unde
       retweet_count,
       favorite_count,
       reply_count, // number of comments
-      source_tweet_id: reply? source_id: null
+      // source_tweet_id: reply? source_id: null
     }
   })
   
 
-  if (temp.length>0) {
-    //one tweet returns multiple reply tweets
-    var arr = temp.map((val) => {
-      return getTwitterData(nextToken, true, id, name)
-    })
-    results.push(arr)
+  //  if (temp.length > 0) {
+  //    //one tweet returns multiple reply tweets
+  //    var arr = temp.map((val) => {
+  //      return getTwitterData(nextToken, true, id, name)
+  //    })
+  //    results.push(arr)
+  //  }
+ 
+  //  pagination
+  //  var results_chain = []
+  //  if (data.next != null){
+  //    results_chain = getTwitterData(data.next)
+  //    results.push(results_chain)
+  //  }
+   
+  // console.log(results)
+  console.log(data.next)
+  return {
+    results,
+    next: data.next
   }
-
-  //pagination
-  var results_chain =[]
-  if (data.next != null){
-    results_chain = getTwitterData(data.next)
-    results.push(results_chain)
-  }
-  
-  //console.log(results)
-  return results
 }
 
 function isLocation(str){
@@ -128,3 +132,4 @@ function isLocation(str){
 }
 
 main()
+
